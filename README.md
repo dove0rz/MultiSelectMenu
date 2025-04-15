@@ -7,10 +7,10 @@ This program is designed to let you perform specific actions in the right-click 
 ## Screenshots
 
 **1 File Selected:**
-![Screenshot of right-click menu with one file selected](pic/1.pic)
+![Screenshot of right-click menu with one file selected](pic/1.png)
 
 **2 Files Selected:**
-![Screenshot of right-click menu with two files selected](pic/2.pic)
+![Screenshot of right-click menu with two files selected](pic/2.png)
 
 ## Usage
 
