@@ -31,6 +31,7 @@ size_t split2vector(std::vector<std::string>* output, std::string str, std::stri
 		if (strncmp(&str[i], delimiter.c_str(), delimiter.length()) == 0) { // if found
 			int len = i - prev_pos;
 			output->push_back(str.substr(prev_pos, len));
+			//printf("deubg> [%d] %s\n", output->size(), str.substr(prev_pos, len).c_str());
 			i += delimiter.length(); // ¸õ¹L delimiter ¥»¨­
 			prev_pos = i;
 		}
@@ -46,6 +47,7 @@ size_t split2vector(std::vector<std::string>* output, std::string str, std::stri
 		else i++;
 	}
 	output->push_back(str.substr(prev_pos, i - prev_pos));
+	//printf("deubg> [%d] %s\n", output->size(), str.substr(prev_pos, i - prev_pos).c_str());
 	return output->size();
 }
 
@@ -71,6 +73,18 @@ uint64_t strFindForwardUntil(const char* buffer, int64_t searchSize, std::string
 		}
 	}
 	return searchSize;
+}
+
+int strReplace(std::string& data, const std::string& pattern, const std::string& replaceTo) {
+	if (pattern.empty()) return 0;
+	int count = 0;
+	std::string::size_type pos = 0;
+	while ((pos = data.find(pattern, pos)) != std::string::npos) {
+		data.replace(pos, pattern.length(), replaceTo);
+		pos += replaceTo.length();
+		++count;
+	}
+	return count;
 }
 
 
@@ -216,15 +230,27 @@ public:
 		int cmdIndex = LOWORD(lpcmi->lpVerb);
 
 		// build all filepath into one parameter
-		std::string command = "\"" + m_menuList[cmdIndex].cmd + "\"";
-		command += m_menuList[cmdIndex].cmdParams;
+		std::string cmd = "\"" + m_menuList[cmdIndex].cmd + "\"";
+		// replace $num to real cmd line
+		std::vector<byte> usedParamIdx;
+		std::string cmdParamString = m_menuList[cmdIndex].cmdParams;
+		for (UINT i = 0; i <= 8 && i < m_fileList.size(); i++) { // 0 ~ 8 => $1 ~ $9
+			std::string patternString = "%";
+			patternString += i + '1';
+			std::string replaceTo = "\"";
+			replaceTo += m_fileList[i];
+			replaceTo += "\"";
+			if (strReplace(cmdParamString, patternString, replaceTo)) usedParamIdx.push_back(i);
+		}
+		cmd += cmdParamString;
+		// add rest of the params to the end
 		for (UINT i = 0; i < m_fileList.size(); i++) {
-			command += " ";
-			command += "\"" + m_fileList[i] + "\"";
+			cmd += " ";
+			cmd += "\"" + m_fileList[i] + "\"";
 		}
 		STARTUPINFOA si = { sizeof(si) };
 		PROCESS_INFORMATION pi;
-		if (!CreateProcessA(NULL, (LPSTR)command.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+		if (!CreateProcessA(NULL, (LPSTR)cmd.c_str(), NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
 			return HRESULT_FROM_WIN32(GetLastError());
 
 		CloseHandle(pi.hProcess);
